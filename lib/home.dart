@@ -1,4 +1,5 @@
 // ignore_for_file: prefer_const_constructors, sort_child_properties_last, prefer_const_literals_to_create_immutables, must_call_super, prefer_typing_uninitialized_variables, use_key_in_widget_constructors, library_private_types_in_public_api, avoid_print, unnecessary_null_comparison, prefer_is_empty, sized_box_for_whitespace, unused_local_variable, no_leading_underscores_for_local_identifiers
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:carousel_slider/carousel_slider.dart';
@@ -18,42 +19,99 @@ class HomePlayer extends StatefulWidget {
 
 class _HomePlayerState extends State<HomePlayer>
     with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
-
-  static String url = "https://play-93fm.madiunkota.go.id/live";
-
-  final player = AudioPlayer();
-  var duration;
-  var position;
-  List<double> audioSamples = []; // Data sampel audio
   static const int MAX_SAMPLES = 44100; // Ubah nilai sesuai kebutuhan Anda
+  static const String liveIndicatorText = "Siaran live sedang berlangsung";
+  static String url = "https://play-93fm.madiunkota.go.id/live";
+  static String youtubeApiKey = "";
+  static String youtubeChannelId = "";
+  int _listenersCount = 0;
 
-  late List<Map<String, dynamic>> _instagramPosts;
-  late String profileLink = ""; // Deklarasikan profileLink di sini
-  late bool _isLoadingPosts;
-  bool _isAudioPlaying = false;
-
+  List<double> audioSamples = []; // Data sampel audio
   final List<Color> colors = [
     Colors.red[900]!,
     Colors.green[900]!,
     Colors.blue[900]!,
     Colors.brown[900]!
   ];
-  var phoneNumber = 'tel:+6285748630511';
 
+  var duration;
+  var phoneNumber = 'tel:+62351461817';
+  final player = AudioPlayer();
+  var position;
+  late String profileLink = ""; // Deklarasikan profileLink di sini
   var urlWa =
       'https://wa.me/+6281556451817/?text=${Uri.encodeFull('Halo Radio Suara Madiun !')}';
 
   final List<int> visDurasi = [900, 700, 600, 800, 500];
+
   final _controller = SiriWaveController(); // Menambahkan SiriWaveController
+  late List<Map<String, dynamic>> _instagramPosts;
+  bool _isAudioPlaying = false;
+  bool _isLive = false;
+  late bool _isLoadingPosts;
+  late Timer _timer;
+
+  late List<Map<String, dynamic>> _youtubeData =
+      []; // Tambahkan variabel _youtubeData
+
+  @override
+  void dispose() {
+    player.dispose();
+    // Panggil SystemChrome.setEnabledSystemUIOverlays dengan [SystemUiOverlay.values] untuk mengembalikan pengaturan overlay UI sistem
+    SystemChrome.setEnabledSystemUIOverlays(
+        SystemUiOverlay.values); // Show the system status bar
+    _timer.cancel(); // Menghentikan timer
+    super.dispose();
+  }
+
+  // Fungsi untuk mengambil data dari API dan memperbarui jumlah pendengar
+  Future<void> _fetchListenersCount() async {
+    try {
+      // Lakukan panggilan HTTP ke API
+      final response = await http
+          .get(Uri.parse('https://play-93fm.madiunkota.go.id/status-json.xsl'));
+
+      // Periksa status kode respons
+      if (response.statusCode == 200) {
+        // Parse data JSON
+        final data = jsonDecode(response.body);
+        // Ambil jumlah pendengar dari data yang diperoleh
+        final listeners = data['icestats']['source']['listeners'];
+        // Perbarui tampilan dengan jumlah pendengar yang diperoleh
+        setState(() {
+          _listenersCount = listeners;
+        });
+      } else {
+        // Jika panggilan gagal, tangani sesuai kebutuhan Anda
+        print('Failed to fetch listeners count');
+      }
+    } catch (error) {
+      // Tangani error jika terjadi kesalahan selama panggilan API
+      print('Error fetching listeners count: $error');
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     SetUriPlay();
     playAudio();
-    // SystemChrome.setEnabledSystemUIOverlays([]); // Hide the system status bar
+    // Panggil fungsi baru untuk mengambil data dari Firebase dan mengupdate variabel
+    fetchDataAndUpdateVariablesFromFirebase();
+    _fetchListenersCount();
+    // Jalankan _checkLiveStatus() pertama kali saat aplikasi baru dibuka
+    Timer(Duration(seconds: 2), () {
+      _checkLiveStatus();
+      _fetchListenersCount();
+    });
+
+    // Mengunci orientasi layar ke mode potret
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    SystemChrome.setEnabledSystemUIOverlays(
+        [SystemUiOverlay.top]); // Show only the status bar
 
     // Fetch Instagram RSS feed
     _fetchInstagramPosts().then((instagramPosts) {
@@ -63,14 +121,61 @@ class _HomePlayerState extends State<HomePlayer>
     }).catchError((error) {
       print('Error fetching Instagram posts: $error');
     });
+
+    // Mengecek status siaran langsung setiap 30 detik
+    _timer = Timer.periodic(Duration(seconds: 60), (timer) {
+      _checkLiveStatus();
+      _fetchListenersCount();
+      fetchDataAndUpdateVariablesFromFirebase();
+      print('Checking live status...'); // Tambahkan pernyataan print di sini
+    });
+    _timer = Timer.periodic(Duration(seconds: 3), (timer) {
+      _fetchListenersCount();
+
+      print('=====UPDATE LISTENER====='); // Tambahkan pernyataan print di sini
+    });
   }
 
   @override
-  void dispose() {
-    player.dispose();
-    SystemChrome.setEnabledSystemUIOverlays(
-        SystemUiOverlay.values); // Show the system status bar
-    super.dispose();
+  bool get wantKeepAlive => true;
+
+  // Implementasi fungsi fetchDataFromFirebase untuk mengambil data dari Firebase
+  Future<Map<String, dynamic>> fetchDataFromFirebase() async {
+    try {
+      final response = await http.get(Uri.parse(
+          'https://live--suara-madiun-default-rtdb.firebaseio.com/.json'));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data;
+      } else {
+        throw Exception('Failed to fetch data from Firebase');
+      }
+    } catch (error) {
+      print('Error fetching data from Firebase: $error');
+      rethrow; // Melempar kembali error untuk ditangani di tempat lain jika diperlukan
+    }
+  }
+
+  // Implementasi fungsi fetchDataAndUpdateVariablesFromFirebase untuk memperbarui variabel berdasarkan data dari Firebase
+  Future<void> fetchDataAndUpdateVariablesFromFirebase() async {
+    try {
+      final data = await fetchDataFromFirebase();
+
+      final firebaseYoutubeApiKey = data['youtubeApiKey'];
+      final firebaseYoutubeChannelId = data['youtubeChannelId'];
+
+      if (firebaseYoutubeApiKey != null && firebaseYoutubeChannelId != null) {
+        setState(() {
+          youtubeApiKey = firebaseYoutubeApiKey;
+          youtubeChannelId = firebaseYoutubeChannelId;
+        });
+        print('youtubeApiKey: $youtubeApiKey');
+        print('youtubeChannelId: $youtubeChannelId');
+      }
+    } catch (error) {
+      print('Error fetching data from Firebase: $error');
+    }
   }
 
   void loadAudioSamples() {
@@ -113,40 +218,6 @@ class _HomePlayerState extends State<HomePlayer>
     }
   }
 
-  Future<List<Map<String, dynamic>>> _fetchInstagramPosts() async {
-    setState(() {
-      _isLoadingPosts =
-          true; // Set _isLoadingPosts menjadi true saat proses pengambilan data dimulai
-    });
-
-    try {
-      final response = await http
-          .get(Uri.parse('https://rss.app/feeds/v1.1/oBYCZ1GV2crnFf21.json'));
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> responseData = json.decode(response.body);
-        final String profileLinkIcon = responseData['home_page_url'];
-        final List<Map<String, dynamic>> instagramPosts =
-            List<Map<String, dynamic>>.from(responseData['items']);
-
-        // Simpan profileLinkIcon ke dalam variabel profileLink yang telah dideklarasikan
-        profileLink = profileLinkIcon;
-
-        return instagramPosts;
-      } else {
-        throw Exception('Failed to load Instagram posts');
-      }
-    } catch (error) {
-      print('Error fetching Instagram posts: $error');
-      return []; // Atau handle error sesuai kebutuhan
-    } finally {
-      setState(() {
-        _isLoadingPosts =
-            false; // Set _isLoadingPosts menjadi false setelah proses pengambilan data selesai
-      });
-    }
-  }
-
   void updateVisualPosition(Duration bufferPosition) {
     setState(() {});
   }
@@ -186,14 +257,114 @@ class _HomePlayerState extends State<HomePlayer>
     }
   }
 
+  Widget buildInstagramCarousel(
+      Size size, List<Map<String, dynamic>> instagramPosts) {
+    return Container(
+      width: size.width,
+      padding: EdgeInsets.symmetric(horizontal: 20.0),
+      child: Container(
+        width: size.width,
+        height: size.height,
+        child: CarouselSlider.builder(
+          itemCount: instagramPosts.length,
+          itemBuilder: (context, index, realIndex) {
+            final post = instagramPosts[index];
+            final imageUrl = post['attachments'][0]['url'];
+            final caption = post['content_text'];
+            final profileLink = post['url'];
+
+            return Container(
+              width: size.width,
+              height: size.height,
+              child: InstagramCard(
+                imageUrl: imageUrl,
+                caption: caption,
+                profileLink: profileLink,
+              ),
+            );
+          },
+          options: CarouselOptions(
+            height: double.infinity,
+            aspectRatio: 16 / 9,
+            viewportFraction: 1.0,
+            autoPlay: true,
+            autoPlayInterval: Duration(seconds: 5),
+            autoPlayAnimationDuration: Duration(milliseconds: 800),
+            autoPlayCurve: Curves.fastOutSlowIn,
+            pauseAutoPlayOnTouch: true,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _checkLiveStatus() async {
+    print('_checkLiveStatus() is being executed');
+    try {
+      final response = await http.get(Uri.parse(
+          'https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=$youtubeChannelId&eventType=live&type=video&key=$youtubeApiKey'));
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        final items = jsonData['items'];
+        final bool isLive = items.isNotEmpty;
+
+        setState(() {
+          _isLive = isLive;
+          _youtubeData = List<Map<String, dynamic>>.from(items);
+        });
+      } else {
+        throw Exception('Failed to fetch live status');
+      }
+    } catch (e) {
+      print('Error checking live status: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchInstagramPosts() async {
+    setState(() {
+      _isLoadingPosts =
+          true; // Set _isLoadingPosts menjadi true saat proses pengambilan data dimulai
+    });
+
+    try {
+      final response = await http
+          .get(Uri.parse('https://rss.app/feeds/v1.1/oBYCZ1GV2crnFf21.json'));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        final String profileLinkIcon = responseData['home_page_url'];
+        final List<Map<String, dynamic>> instagramPosts =
+            List<Map<String, dynamic>>.from(responseData['items']);
+
+        // Simpan profileLinkIcon ke dalam variabel profileLink yang telah dideklarasikan
+        profileLink = profileLinkIcon;
+
+        return instagramPosts;
+      } else {
+        throw Exception('Failed to load Instagram posts');
+      }
+    } catch (error) {
+      print('Error fetching Instagram posts: $error');
+      return []; // Atau handle error sesuai kebutuhan
+    } finally {
+      setState(() {
+        _isLoadingPosts =
+            false; // Set _isLoadingPosts menjadi false setelah proses pengambilan data selesai
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
-    return SafeArea(
-      child: Container(
+    return Scaffold(
+      extendBodyBehindAppBar:
+          true, // Membuat latar belakang memperluas ke belakang appbar
+      body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
-            fit: BoxFit.fill,
+            fit: BoxFit.cover,
             image: AssetImage("assets/img/bglppl.jpg"),
           ),
           gradient: LinearGradient(
@@ -212,12 +383,62 @@ class _HomePlayerState extends State<HomePlayer>
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   SizedBox(height: 50),
-                  Image.asset(
-                    "assets/img/logopemkotxradio.png",
-                    width: 150,
-                    height: 80,
-                    fit: BoxFit.fitWidth,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Image.asset(
+                        "assets/img/logopemkotxradio.png",
+                        width: 150,
+                        height: 80,
+                        fit: BoxFit.fitWidth,
+                      ),
+                      SizedBox(width: 90),
+                      Row(
+                        children: [
+                          // Ganti IconButton dengan Image.asset
+                          Image.asset(
+                            'assets/img/listen.png', // Ganti dengan path gambar ikon Anda
+                            width:
+                                30, // Sesuaikan lebar gambar sesuai kebutuhan Anda
+                            height:
+                                30, // Sesuaikan tinggi gambar sesuai kebutuhan Anda
+                            color: Colors
+                                .white, // Sesuaikan warna gambar sesuai kebutuhan Anda
+                          ),
+                          SizedBox(
+                              width:
+                                  5), // Tambahkan jarak antara gambar dan teks
+                          Text(
+                            ' $_listenersCount',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color.fromARGB(255, 255, 159, 34),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
+                  if (_isLive)
+                    GestureDetector(
+                      onTap: () {
+                        if (_isLive && _youtubeData.isNotEmpty) {
+                          final videoId = _youtubeData[0]['id']
+                              ['videoId']; // Perbaiki pengambilan videoId
+                          final url =
+                              'https://www.youtube.com/watch?v=$videoId';
+                          launchUrl(Uri.parse(url));
+                        }
+                      },
+                      child: Image.asset(
+                        'assets/img/live.gif',
+                        width: 150,
+                        height: 80,
+                        fit: BoxFit.fitWidth,
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -267,6 +488,7 @@ class _HomePlayerState extends State<HomePlayer>
                       },
                       icon: Icon(FontAwesomeIcons.whatsapp),
                     ),
+                    SizedBox(width: 5),
                   ],
                 ),
                 Padding(
@@ -297,55 +519,16 @@ class _HomePlayerState extends State<HomePlayer>
                     stopAudio, // Pass the stopAudio method to AudioPlayerWidget
               ),
             ),
+
             SizedBox(height: 80),
+
             Image.asset("assets/img/follow.png",
                 width: 200, fit: BoxFit.fitHeight // Penyesuaian ukuran gambar
                 ),
             SizedBox(
                 height: size.height *
-                    0.01), // Mengatur jarak antara gambar dan widget berikutnya
+                    0.02), // Mengatur jarak antara gambar dan widget berikutnya
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget buildInstagramCarousel(
-      Size size, List<Map<String, dynamic>> instagramPosts) {
-    return Container(
-      width: size.width,
-      padding: EdgeInsets.symmetric(horizontal: 20.0),
-      child: Container(
-        width: size.width,
-        height: size.height,
-        child: CarouselSlider.builder(
-          itemCount: instagramPosts.length,
-          itemBuilder: (context, index, realIndex) {
-            final post = instagramPosts[index];
-            final imageUrl = post['attachments'][0]['url'];
-            final caption = post['content_text'];
-            final profileLink = post['url'];
-
-            return Container(
-              width: size.width,
-              height: size.height,
-              child: InstagramCard(
-                imageUrl: imageUrl,
-                caption: caption,
-                profileLink: profileLink,
-              ),
-            );
-          },
-          options: CarouselOptions(
-            height: double.infinity,
-            aspectRatio: 16 / 9,
-            viewportFraction: 1.0,
-            autoPlay: true,
-            autoPlayInterval: Duration(seconds: 5),
-            autoPlayAnimationDuration: Duration(milliseconds: 800),
-            autoPlayCurve: Curves.fastOutSlowIn,
-            pauseAutoPlayOnTouch: true,
-          ),
         ),
       ),
     );
@@ -353,15 +536,15 @@ class _HomePlayerState extends State<HomePlayer>
 }
 
 class InstagramCard extends StatelessWidget {
-  final String imageUrl;
-  final String caption;
-  final String profileLink;
-
   InstagramCard({
     required this.imageUrl,
     required this.caption,
     required this.profileLink,
   });
+
+  final String caption;
+  final String imageUrl;
+  final String profileLink;
 
   void launchInstagramProfile(Uri profileLink) async {
     if (await launchUrl(profileLink)) {
@@ -453,13 +636,6 @@ class InstagramCard extends StatelessWidget {
 }
 
 class AudioPlayerWidget extends StatefulWidget {
-  final AudioPlayer player;
-  final List<double> audioSamples;
-  final void Function(Duration) updateVisualPosition;
-  final bool isPlaying; // Tambahkan properti untuk status pemutaran audio
-  final VoidCallback playAudio; // Tambahkan properti untuk metode playAudio
-  final VoidCallback stopAudio; // Tambahkan properti untuk metode stopAudio
-
   AudioPlayerWidget({
     Key? key,
     required this.player,
@@ -470,34 +646,27 @@ class AudioPlayerWidget extends StatefulWidget {
     required this.stopAudio,
   }) : super(key: key);
 
+  final List<double> audioSamples;
+  final bool isPlaying; // Tambahkan properti untuk status pemutaran audio
+  final VoidCallback playAudio; // Tambahkan properti untuk metode playAudio
+  final AudioPlayer player;
+  final VoidCallback stopAudio; // Tambahkan properti untuk metode stopAudio
+  final void Function(Duration) updateVisualPosition;
+
   @override
   _AudioPlayerWidgetState createState() => _AudioPlayerWidgetState();
 }
 
 class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
-  late SiriWaveController _controller;
   double _amplitude = 0.0;
+  late SiriWaveController _controller;
   bool _isPlaying = false;
 
-  void _updateAmplitude(double amplitude) {
-    setState(() {
-      _amplitude = amplitude;
-      _controller.setAmplitude(_amplitude);
-    });
-  }
+  @override
+  void dispose() {
+    widget.player.dispose();
 
-  void _togglePlayback() async {
-    if (_isPlaying) {
-      widget.stopAudio(); // Stop audio if it's playing
-      setState(() {
-        _isPlaying = false; // Update playback status
-      });
-    } else {
-      widget.playAudio(); // Start audio if it's not playing
-      setState(() {
-        _isPlaying = true; // Update playback status
-      });
-    }
+    super.dispose();
   }
 
   @override
@@ -523,11 +692,25 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
     });
   }
 
-  @override
-  void dispose() {
-    widget.player.dispose();
+  void _updateAmplitude(double amplitude) {
+    setState(() {
+      _amplitude = amplitude;
+      _controller.setAmplitude(_amplitude);
+    });
+  }
 
-    super.dispose();
+  void _togglePlayback() async {
+    if (_isPlaying) {
+      widget.stopAudio(); // Stop audio if it's playing
+      setState(() {
+        _isPlaying = false; // Update playback status
+      });
+    } else {
+      widget.playAudio(); // Start audio if it's not playing
+      setState(() {
+        _isPlaying = true; // Update playback status
+      });
+    }
   }
 
   @override
