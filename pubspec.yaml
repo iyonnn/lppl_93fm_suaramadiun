@@ -44,11 +44,8 @@ dependencies:
   url_launcher: ^6.1.11
   siri_wave: ^0.3.0
   permission_handler: ^11.0.1
-<<<<<<< HEAD
   firebase_remote_config: ^4.3.8
-=======
   audio_session: ^0.1.19
->>>>>>> 4eb5893 (hapus file generated.xconfig di gtignore)
 
 
  
@@ -84,13 +81,10 @@ flutter:
     - assets/img/logoone.png
     - assets/img/follow.png
     - assets/img/splash.gif
-<<<<<<< HEAD
     - assets/img/live.gif
     - assets/img/listen.png
-
-=======
     - assets/img/listen.png
->>>>>>> 4eb5893 (hapus file generated.xconfig di gtignore)
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
