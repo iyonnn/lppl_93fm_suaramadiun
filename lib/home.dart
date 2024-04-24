@@ -26,10 +26,9 @@ class _HomePlayerState extends State<HomePlayer>
   static String youtubeApiKey = "";
   static String youtubeChannelId = "";
   int _listenersCount = 0;
-<<<<<<< HEAD
-=======
+
   late AudioSession session;
->>>>>>> 4eb5893 (hapus file generated.xconfig di gtignore)
+
 
   List<double> audioSamples = []; // Data sampel audio
   final List<Color> colors = [
@@ -63,16 +62,16 @@ class _HomePlayerState extends State<HomePlayer>
   void dispose() {
     player.dispose();
     // Panggil SystemChrome.setEnabledSystemUIOverlays dengan [SystemUiOverlay.values] untuk mengembalikan pengaturan overlay UI sistem
-<<<<<<< HEAD
-    SystemChrome.setEnabledSystemUIOverlays(
-        SystemUiOverlay.values); // Show the system status bar
+
+    SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.manual, overlays: SystemUiOverlay.values); // Show the system status bar
     _timer.cancel(); // Menghentikan timer
-=======
+
     SystemChrome.setEnabledSystemUIMode(
         SystemUiMode.manual, overlays: SystemUiOverlay.values); // Show the system status bar
     _timer.cancel(); // Menghentikan timer
      
->>>>>>> 4eb5893 (hapus file generated.xconfig di gtignore)
+
     super.dispose();
   }
 
@@ -102,8 +101,7 @@ class _HomePlayerState extends State<HomePlayer>
       print('Error fetching listeners count: $error');
     }
   }
-<<<<<<< HEAD
-=======
+
   Future<void> initAudioSession() async {
   session = await AudioSession.instance;
   await session.configure(AudioSessionConfiguration(
@@ -120,17 +118,16 @@ class _HomePlayerState extends State<HomePlayer>
   });
 }
 
->>>>>>> 4eb5893 (hapus file generated.xconfig di gtignore)
+
 
   @override
   void initState() {
     super.initState();
     SetUriPlay();
     playAudio();
-<<<<<<< HEAD
-=======
+
     initAudioSession();
->>>>>>> 4eb5893 (hapus file generated.xconfig di gtignore)
+
     // Panggil fungsi baru untuk mengambil data dari Firebase dan mengupdate variabel
     fetchDataAndUpdateVariablesFromFirebase();
     _fetchListenersCount();
@@ -145,13 +142,13 @@ class _HomePlayerState extends State<HomePlayer>
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
-<<<<<<< HEAD
-    SystemChrome.setEnabledSystemUIOverlays(
-        [SystemUiOverlay.top]); // Show only the status bar
-=======
+
     SystemChrome.setEnabledSystemUIMode(
         SystemUiMode.manual, overlays: [SystemUiOverlay.top]); // Show only the status bar
->>>>>>> 4eb5893 (hapus file generated.xconfig di gtignore)
+
+    SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.manual, overlays: [SystemUiOverlay.top]); // Show only the status bar
+
 
     // Fetch Instagram RSS feed
     _fetchInstagramPosts().then((instagramPosts) {
@@ -408,11 +405,10 @@ if (await canLaunch(url)) {
       extendBodyBehindAppBar:
           true, // Membuat latar belakang memperluas ke belakang appbar
       body: Container(
-<<<<<<< HEAD
-=======
+
         width: size.width,
         height: size.height,
->>>>>>> 4eb5893 (hapus file generated.xconfig di gtignore)
+
         decoration: BoxDecoration(
           image: DecorationImage(
             fit: BoxFit.cover,

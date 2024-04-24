@@ -548,8 +548,7 @@ packages:
       sha256: "53e943d4206a5e30df338fd4c6e7a077e02254531b138a15aec3bd143c1a8b3c"
       url: "https://pub.dev"
     source: hosted
-<<<<<<< HEAD
-    version: "1.9.1"
+    version: "1.10.0"
   sprintf:
     dependency: transitive
     description:
@@ -558,9 +557,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.0"
-=======
-    version: "1.10.0"
->>>>>>> 4eb5893 (hapus file generated.xconfig di gtignore)
   stack_trace:
     dependency: transitive
     description:
