@@ -1,4 +1,4 @@
-package com.kominfo.lppl_93fm_suara_madiun
+package com.kominfo.lppl-93fm-suara-madiun
 
 import io.flutter.embedding.android.FlutterActivity
 

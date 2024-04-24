@@ -32,7 +32,7 @@ apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
-    namespace "com.kominfo.lppl_93fm_suara_madiun"
+    namespace "com.kominfo.lppl-93fm-suara-madiun"
     compileSdkVersion 33
     
 
@@ -51,7 +51,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId "com.kominfo.lppl_93fm_suara_madiun"
+        applicationId "com.kominfo.lppl-93fm-suara-madiun"
 
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.

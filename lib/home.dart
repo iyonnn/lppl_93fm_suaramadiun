@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:audio_session/audio_session.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +26,10 @@ class _HomePlayerState extends State<HomePlayer>
   static String youtubeApiKey = "";
   static String youtubeChannelId = "";
   int _listenersCount = 0;
+<<<<<<< HEAD
+=======
+  late AudioSession session;
+>>>>>>> 4eb5893 (hapus file generated.xconfig di gtignore)
 
   List<double> audioSamples = []; // Data sampel audio
   final List<Color> colors = [
@@ -58,9 +63,16 @@ class _HomePlayerState extends State<HomePlayer>
   void dispose() {
     player.dispose();
     // Panggil SystemChrome.setEnabledSystemUIOverlays dengan [SystemUiOverlay.values] untuk mengembalikan pengaturan overlay UI sistem
+<<<<<<< HEAD
     SystemChrome.setEnabledSystemUIOverlays(
         SystemUiOverlay.values); // Show the system status bar
     _timer.cancel(); // Menghentikan timer
+=======
+    SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.manual, overlays: SystemUiOverlay.values); // Show the system status bar
+    _timer.cancel(); // Menghentikan timer
+     
+>>>>>>> 4eb5893 (hapus file generated.xconfig di gtignore)
     super.dispose();
   }
 
@@ -90,12 +102,35 @@ class _HomePlayerState extends State<HomePlayer>
       print('Error fetching listeners count: $error');
     }
   }
+<<<<<<< HEAD
+=======
+  Future<void> initAudioSession() async {
+  session = await AudioSession.instance;
+  await session.configure(AudioSessionConfiguration(
+    avAudioSessionCategory: AVAudioSessionCategory.playback,
+    
+  ));
+  session.interruptionEventStream.listen((event) {
+    if (event.type == AudioInterruptionType.duck) {
+      // Tangani pemutusan audio (misalnya saat panggilan telepon masuk)
+      stopAudio();
+    } else if (event.type == AudioInterruptionType.pause) {
+      // Tangani pemulihan setelah pemutusan audio
+    }
+  });
+}
+
+>>>>>>> 4eb5893 (hapus file generated.xconfig di gtignore)
 
   @override
   void initState() {
     super.initState();
     SetUriPlay();
     playAudio();
+<<<<<<< HEAD
+=======
+    initAudioSession();
+>>>>>>> 4eb5893 (hapus file generated.xconfig di gtignore)
     // Panggil fungsi baru untuk mengambil data dari Firebase dan mengupdate variabel
     fetchDataAndUpdateVariablesFromFirebase();
     _fetchListenersCount();
@@ -110,8 +145,13 @@ class _HomePlayerState extends State<HomePlayer>
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
+<<<<<<< HEAD
     SystemChrome.setEnabledSystemUIOverlays(
         [SystemUiOverlay.top]); // Show only the status bar
+=======
+    SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.manual, overlays: [SystemUiOverlay.top]); // Show only the status bar
+>>>>>>> 4eb5893 (hapus file generated.xconfig di gtignore)
 
     // Fetch Instagram RSS feed
     _fetchInstagramPosts().then((instagramPosts) {
@@ -204,11 +244,17 @@ class _HomePlayerState extends State<HomePlayer>
     }
   }
 
-  Future<void> launchInstagramProfile(Uri profileLink) async {
-    if (await launchUrl(profileLink)) {
-    } else {
-      throw 'Could not launch $profileLink';
-    }
+  void launchInstagramProfile(Uri profileLink) async {
+    var url = 'https://www.instagram.com/93fmsuaramadiun/';
+
+if (await canLaunch(url)) {
+  await launch(
+    url,
+    universalLinksOnly: true,
+  );
+} else {
+  throw 'There was a problem to open the url: $url';
+}
   }
 
   Future<void> launchWa(Uri noWa) async {
@@ -362,6 +408,11 @@ class _HomePlayerState extends State<HomePlayer>
       extendBodyBehindAppBar:
           true, // Membuat latar belakang memperluas ke belakang appbar
       body: Container(
+<<<<<<< HEAD
+=======
+        width: size.width,
+        height: size.height,
+>>>>>>> 4eb5893 (hapus file generated.xconfig di gtignore)
         decoration: BoxDecoration(
           image: DecorationImage(
             fit: BoxFit.cover,
@@ -743,6 +794,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                 }
               },
               style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueAccent,
                 shape: CircleBorder(),
                 elevation: 5,
                 padding: EdgeInsets.all(10),
@@ -763,10 +815,12 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                     ? Icon(
                         Icons.stop,
                         size: 50,
+                        color : Colors.white
                       )
                     : Icon(
                         Icons.play_circle_filled,
                         size: 50,
+                        color : Colors.white
                       ),
               ),
             ),
