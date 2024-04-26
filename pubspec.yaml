@@ -45,7 +45,11 @@ dependencies:
   siri_wave: ^0.3.0
   permission_handler: ^11.0.1
   firebase_remote_config: ^4.3.8
+<<<<<<< HEAD
   marquee: ^2.2.3
+=======
+  audio_session: ^0.1.19
+>>>>>>> b3b25a106e04cd7d5deebe985c66b3adec37d264
 
 
  
@@ -82,6 +86,7 @@ flutter:
     - assets/img/follow.png
     - assets/img/splash.gif
     - assets/img/live.gif
+    - assets/img/listen.png
     - assets/img/listen.png
 
 
