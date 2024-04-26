@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
+import 'package:marquee/marquee.dart';
 import 'package:siri_wave/siri_wave.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -75,8 +76,13 @@ class _HomePlayerState extends State<HomePlayer>
       if (response.statusCode == 200) {
         // Parse data JSON
         final data = jsonDecode(response.body);
-        // Ambil jumlah pendengar dari data yang diperoleh
-        final listeners = data['icestats']['source']['listeners'];
+
+        // Ambil sumber pertama dari array "source"
+        final firstSource = data['icestats']['source'][0];
+
+        // Ambil jumlah pendengar dari sumber pertama
+        final listeners = firstSource['listeners'];
+
         // Perbarui tampilan dengan jumlah pendengar yang diperoleh
         setState(() {
           _listenersCount = listeners;
@@ -99,6 +105,7 @@ class _HomePlayerState extends State<HomePlayer>
     // Panggil fungsi baru untuk mengambil data dari Firebase dan mengupdate variabel
     fetchDataAndUpdateVariablesFromFirebase();
     _fetchListenersCount();
+
     // Jalankan _checkLiveStatus() pertama kali saat aplikasi baru dibuka
     Timer(Duration(seconds: 2), () {
       _checkLiveStatus();
@@ -474,7 +481,7 @@ class _HomePlayerState extends State<HomePlayer>
                       color: Colors.white,
                       onPressed: () {
                         launchUrl(Uri.parse(
-                            "https://www.youtube.com/@93fmlpplradiosuaramadiun76"));
+                            "https://www.youtube.com/channel/UC4kRQ6WcPUEu3Sa74FBliKQ"));
                       },
                       icon: Icon(FontAwesomeIcons.youtube),
                     ),
@@ -519,9 +526,7 @@ class _HomePlayerState extends State<HomePlayer>
                     stopAudio, // Pass the stopAudio method to AudioPlayerWidget
               ),
             ),
-
             SizedBox(height: 80),
-
             Image.asset("assets/img/follow.png",
                 width: 200, fit: BoxFit.fitHeight // Penyesuaian ukuran gambar
                 ),
@@ -661,6 +666,28 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
   double _amplitude = 0.0;
   late SiriWaveController _controller;
   bool _isPlaying = false;
+  String _nowPlayingTitle = '';
+  late Timer _timerPlaying;
+
+  Future<void> fetchNowPlayingTitle() async {
+    try {
+      final response = await http
+          .get(Uri.parse('https://play-93fm.madiunkota.go.id/status-json.xsl'));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final title = data['icestats']['source'][1]
+            ['title']; // Ambil judul lagu dari sumber kedua
+        setState(() {
+          _nowPlayingTitle = title; // Perbarui judul lagu yang sedang diputar
+        });
+      } else {
+        throw Exception('Failed to fetch now playing title');
+      }
+    } catch (error) {
+      print('Error Pengambilan Data title: $error');
+    }
+  }
 
   @override
   void dispose() {
@@ -689,6 +716,13 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
           _updateAmplitude(1.0);
         });
       }
+    });
+    fetchNowPlayingTitle();
+    _timerPlaying = Timer.periodic(Duration(seconds: 40), (timer) {
+      fetchNowPlayingTitle();
+
+      print(
+          '=====UPDATE NowPlaying====='); // Tambahkan pernyataan print di sini
     });
   }
 
@@ -720,15 +754,59 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
       child: Column(
         children: <Widget>[
           Expanded(
-            child: SiriWave(
-              controller: _controller,
-              style: SiriWaveStyle.ios_9,
-              options: SiriWaveOptions(
-                height: kIsWeb ? 300 : 180,
-                width: kIsWeb ? 600 : 360,
-                showSupportBar: true,
-                backgroundColor: Colors.black,
-              ),
+            child: Column(
+              children: <Widget>[
+                Container(
+                  width: size.width *
+                      0.8, // Ukuran lebar sesuai dengan parent (Expanded)
+                  height: size.height *
+                      0.1, // Atur tinggi sesuai kebutuhan atau gunakan ukuran yang cocok
+                  child: SiriWave(
+                    controller: _controller,
+                    style: SiriWaveStyle.ios_9,
+                    options: SiriWaveOptions(
+                      height: size.height * 0.2,
+                      width: kIsWeb ? 600 : 360,
+                      showSupportBar: true,
+                      backgroundColor: Colors.black,
+                    ),
+                  ),
+                ),
+                // Container(
+                //     // width: size.width *
+                //     //     0.8, // Ukuran lebar sesuai dengan parent (Expanded)
+                //     height: size.height *
+                //         0.05, // Atur tinggi sesuai kebutuhan atau gunakan ukuran yang cocok
+                //     child: Text(
+                //       'Now',
+                //       style: TextStyle(
+                //         fontSize: 18,
+                //         fontWeight: FontWeight.normal,
+                //         color: Color.fromARGB(255, 255, 255, 255),
+                //       ),
+                //     )),
+                Container(
+                  width: size.width *
+                      0.8, // Ukuran lebar sesuai dengan parent (Expanded)
+                  height: size.height *
+                      0.02, // Atur tinggi sesuai kebutuhan atau gunakan ukuran yang cocok
+                  child: Marquee(
+                      text:
+                          _nowPlayingTitle.isNotEmpty ? _nowPlayingTitle : "-",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w300,
+                        color: Color.fromARGB(255, 255, 255, 255),
+                      ),
+                      blankSpace: 70,
+                      velocity: 50,
+                      scrollAxis: Axis.horizontal,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      showFadingOnlyWhenScrolling: true,
+                      fadingEdgeStartFraction: 0.1,
+                      fadingEdgeEndFraction: 0.1),
+                ),
+              ],
             ),
           ),
           Container(
