@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_constructors, sort_child_properties_last, prefer_const_literals_to_create_immutables, must_call_super, prefer_typing_uninitialized_variables, use_key_in_widget_constructors, library_private_types_in_public_api, avoid_print, unnecessary_null_comparison, prefer_is_empty, sized_box_for_whitespace, unused_local_variable, no_leading_underscores_for_local_identifiers
+// ignore_for_file: prefer_const_constructors, sort_child_properties_last, prefer_const_literals_to_create_immutables, must_call_super, prefer_typing_uninitialized_variables, use_key_in_widget_constructors, library_private_types_in_public_api, avoid_print, unnecessary_null_comparison, prefer_is_empty, sized_box_for_whitespace, unused_local_variable, no_leading_underscores_for_local_identifiers, unused_field
 import 'dart:async';
 import 'dart:convert';
 
@@ -30,7 +30,6 @@ class _HomePlayerState extends State<HomePlayer>
 
   late AudioSession session;
 
-
   List<double> audioSamples = []; // Data sampel audio
   final List<Color> colors = [
     Colors.red[900]!,
@@ -44,17 +43,20 @@ class _HomePlayerState extends State<HomePlayer>
   final player = AudioPlayer();
   var position;
   late String profileLink = ""; // Deklarasikan profileLink di sini
+
   var urlWa =
       'https://wa.me/+6281556451817/?text=${Uri.encodeFull('Halo Radio Suara Madiun !')}';
 
   final List<int> visDurasi = [900, 700, 600, 800, 500];
-
   final _controller = SiriWaveController(); // Menambahkan SiriWaveController
-  late List<Map<String, dynamic>> _instagramPosts;
+
   bool _isAudioPlaying = false;
   bool _isLive = false;
-  late bool _isLoadingPosts;
+  // late bool _isLoadingPosts;
+
   late Timer _timer;
+  List<Map<String, dynamic>> _instagramPosts = [];
+  bool _isLoadingPosts = false;
 
   late List<Map<String, dynamic>> _youtubeData =
       []; // Tambahkan variabel _youtubeData
@@ -62,17 +64,12 @@ class _HomePlayerState extends State<HomePlayer>
   @override
   void dispose() {
     player.dispose();
-    // Panggil SystemChrome.setEnabledSystemUIOverlays dengan [SystemUiOverlay.values] untuk mengembalikan pengaturan overlay UI sistem
-
-    SystemChrome.setEnabledSystemUIMode(
-        SystemUiMode.manual, overlays: SystemUiOverlay.values); // Show the system status bar
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+        overlays: SystemUiOverlay.values); // Show the system status bar
     _timer.cancel(); // Menghentikan timer
-
-    SystemChrome.setEnabledSystemUIMode(
-        SystemUiMode.manual, overlays: SystemUiOverlay.values); // Show the system status bar
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+        overlays: SystemUiOverlay.values); // Show the system status bar
     _timer.cancel(); // Menghentikan timer
-     
-
     super.dispose();
   }
 
@@ -82,81 +79,60 @@ class _HomePlayerState extends State<HomePlayer>
       // Lakukan panggilan HTTP ke API
       final response = await http
           .get(Uri.parse('https://play-93fm.madiunkota.go.id/status-json.xsl'));
-
-      // Periksa status kode respons
       if (response.statusCode == 200) {
         // Parse data JSON
         final data = jsonDecode(response.body);
-
         // Ambil sumber pertama dari array "source"
         final firstSource = data['icestats']['source'][0];
-
-        // Ambil jumlah pendengar dari sumber pertama
         final listeners = firstSource['listeners'];
-
-        // Perbarui tampilan dengan jumlah pendengar yang diperoleh
         setState(() {
           _listenersCount = listeners;
         });
       } else {
-        // Jika panggilan gagal, tangani sesuai kebutuhan Anda
         print('Failed to fetch listeners count');
       }
     } catch (error) {
-      // Tangani error jika terjadi kesalahan selama panggilan API
       print('Error fetching listeners count: $error');
     }
   }
 
   Future<void> initAudioSession() async {
-  session = await AudioSession.instance;
-  await session.configure(AudioSessionConfiguration(
-    avAudioSessionCategory: AVAudioSessionCategory.playback,
-    
-  ));
-  session.interruptionEventStream.listen((event) {
-    if (event.type == AudioInterruptionType.duck) {
-      // Tangani pemutusan audio (misalnya saat panggilan telepon masuk)
-      stopAudio();
-    } else if (event.type == AudioInterruptionType.pause) {
-      // Tangani pemulihan setelah pemutusan audio
-    }
-  });
-}
-
-
+    session = await AudioSession.instance;
+    await session.configure(AudioSessionConfiguration(
+      avAudioSessionCategory: AVAudioSessionCategory.playback,
+    ));
+    session.interruptionEventStream.listen((event) {
+      if (event.type == AudioInterruptionType.duck) {
+        // Tangani pemutusan audio (misalnya saat panggilan telepon masuk)
+        stopAudio();
+      } else if (event.type == AudioInterruptionType.pause) {
+        // Tangani pemulihan setelah pemutusan audio
+      }
+    });
+  }
 
   @override
   void initState() {
     super.initState();
     SetUriPlay();
     playAudio();
-
     initAudioSession();
-
-    // Panggil fungsi baru untuk mengambil data dari Firebase dan mengupdate variabel
+    fetchAllPosts();
     fetchDataAndUpdateVariablesFromFirebase();
     _fetchListenersCount();
-
-    // Jalankan _checkLiveStatus() pertama kali saat aplikasi baru dibuka
     Timer(Duration(seconds: 2), () {
       _checkLiveStatus();
       _fetchListenersCount();
     });
-
-    // Mengunci orientasi layar ke mode potret
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
 
-    SystemChrome.setEnabledSystemUIMode(
-        SystemUiMode.manual, overlays: [SystemUiOverlay.top]); // Show only the status bar
-
-    SystemChrome.setEnabledSystemUIMode(
-        SystemUiMode.manual, overlays: [SystemUiOverlay.top]); // Show only the status bar
-
-
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+        overlays: [SystemUiOverlay.top]); // Show only the status bar
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+        overlays: [SystemUiOverlay.top]); // Show only the status bar
     // Fetch Instagram RSS feed
     _fetchInstagramPosts().then((instagramPosts) {
       setState(() {
@@ -166,7 +142,6 @@ class _HomePlayerState extends State<HomePlayer>
       print('Error fetching Instagram posts: $error');
     });
 
-    // Mengecek status siaran langsung setiap 30 detik
     _timer = Timer.periodic(Duration(seconds: 60), (timer) {
       _checkLiveStatus();
       _fetchListenersCount();
@@ -175,7 +150,6 @@ class _HomePlayerState extends State<HomePlayer>
     });
     _timer = Timer.periodic(Duration(seconds: 3), (timer) {
       _fetchListenersCount();
-
       print('=====UPDATE LISTENER====='); // Tambahkan pernyataan print di sini
     });
   }
@@ -188,7 +162,6 @@ class _HomePlayerState extends State<HomePlayer>
     try {
       final response = await http.get(Uri.parse(
           'https://live--suara-madiun-default-rtdb.firebaseio.com/.json'));
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data;
@@ -224,21 +197,11 @@ class _HomePlayerState extends State<HomePlayer>
 
   void loadAudioSamples() {
     final audioPlayer = player;
-
-    // Pastikan audio player tidak null
     if (audioPlayer != null) {
-      // Dapatkan stream posisi yang di-buffer dari audio player
       final bufferedPositionStream = audioPlayer.bufferedPositionStream;
-
-      // Mendengarkan perubahan dalam stream posisi yang di-buffer
       bufferedPositionStream.listen((bufferedPosition) {
-        // Lakukan sesuatu dengan bufferedPosition, misalnya konversi ke sampel audio
-        // Kemudian tambahkan ke daftar sampel audio
         setState(() {
-          // Tambahkan sampel audio ke dalam daftar
           audioSamples.add(bufferedPosition.inMilliseconds.toDouble());
-
-          // Atau, Anda mungkin ingin membatasi jumlah sampel yang disimpan untuk mencegah memori berlebihan
           if (audioSamples.length > MAX_SAMPLES) {
             audioSamples.removeAt(
                 0); // Hapus sampel tertua jika jumlah sampel melebihi batas maksimum
@@ -251,14 +214,14 @@ class _HomePlayerState extends State<HomePlayer>
   void launchInstagramProfile(Uri profileLink) async {
     var url = 'https://www.instagram.com/93fmsuaramadiun/';
 
-if (await canLaunch(url)) {
-  await launch(
-    url,
-    universalLinksOnly: true,
-  );
-} else {
-  throw 'There was a problem to open the url: $url';
-}
+    if (await canLaunch(url)) {
+      await launch(
+        url,
+        universalLinksOnly: true,
+      );
+    } else {
+      throw 'There was a problem to open the url: $url';
+    }
   }
 
   Future<void> launchWa(Uri noWa) async {
@@ -307,47 +270,6 @@ if (await canLaunch(url)) {
     }
   }
 
-  Widget buildInstagramCarousel(
-      Size size, List<Map<String, dynamic>> instagramPosts) {
-    return Container(
-      width: size.width,
-      padding: EdgeInsets.symmetric(horizontal: 20.0),
-      child: Container(
-        width: size.width,
-        height: size.height,
-        child: CarouselSlider.builder(
-          itemCount: instagramPosts.length,
-          itemBuilder: (context, index, realIndex) {
-            final post = instagramPosts[index];
-            final imageUrl = post['attachments'][0]['url'];
-            final caption = post['content_text'];
-            final profileLink = post['url'];
-
-            return Container(
-              width: size.width,
-              height: size.height,
-              child: InstagramCard(
-                imageUrl: imageUrl,
-                caption: caption,
-                profileLink: profileLink,
-              ),
-            );
-          },
-          options: CarouselOptions(
-            height: double.infinity,
-            aspectRatio: 16 / 9,
-            viewportFraction: 1.0,
-            autoPlay: true,
-            autoPlayInterval: Duration(seconds: 5),
-            autoPlayAnimationDuration: Duration(milliseconds: 800),
-            autoPlayCurve: Curves.fastOutSlowIn,
-            pauseAutoPlayOnTouch: true,
-          ),
-        ),
-      ),
-    );
-  }
-
   Future<void> _checkLiveStatus() async {
     print('_checkLiveStatus() is being executed');
     try {
@@ -358,7 +280,6 @@ if (await canLaunch(url)) {
         final jsonData = json.decode(response.body);
         final items = jsonData['items'];
         final bool isLive = items.isNotEmpty;
-
         setState(() {
           _isLive = isLive;
           _youtubeData = List<Map<String, dynamic>>.from(items);
@@ -373,8 +294,7 @@ if (await canLaunch(url)) {
 
   Future<List<Map<String, dynamic>>> _fetchInstagramPosts() async {
     setState(() {
-      _isLoadingPosts =
-          true; // Set _isLoadingPosts menjadi true saat proses pengambilan data dimulai
+      _isLoadingPosts = true;
     });
 
     try {
@@ -387,22 +307,129 @@ if (await canLaunch(url)) {
         final List<Map<String, dynamic>> instagramPosts =
             List<Map<String, dynamic>>.from(responseData['items']);
 
-        // Simpan profileLinkIcon ke dalam variabel profileLink yang telah dideklarasikan
-        profileLink = profileLinkIcon;
-
-        return instagramPosts;
+        profileLink = profileLinkIcon; // Simpan link profile Instagram
+        return instagramPosts
+            .map((post) => {
+                  'title': post['title'],
+                  'description': post['content_text'] ?? '',
+                  'url': post['url'],
+                  'image': post['attachments'] != null &&
+                          post['attachments'].isNotEmpty
+                      ? post['attachments'][0]['url']
+                      : null,
+                })
+            .toList();
       } else {
         throw Exception('Failed to load Instagram posts');
       }
     } catch (error) {
       print('Error fetching Instagram posts: $error');
-      return []; // Atau handle error sesuai kebutuhan
+      return [];
     } finally {
       setState(() {
-        _isLoadingPosts =
-            false; // Set _isLoadingPosts menjadi false setelah proses pengambilan data selesai
+        _isLoadingPosts = false;
       });
     }
+  }
+
+  Future<void> fetchAllPosts() async {
+    setState(() {
+      _isLoadingPosts = true;
+      _instagramPosts = []; // Pastikan list kosong sebelum mengambil data
+    });
+
+    // Fetch Instagram posts
+    List<Map<String, dynamic>> instagramPosts = await _fetchInstagramPosts();
+
+    // Tambahkan postingan Instagram ke dalam list _instagramPosts
+    _instagramPosts.addAll(instagramPosts);
+
+    // Fetch KabarWarga posts dan tambahkan ke list _instagramPosts
+    await _fetchKabarWargaAPI();
+
+    setState(() {
+      _isLoadingPosts = false;
+    });
+  }
+
+  Future<void> _fetchKabarWargaAPI() async {
+    final url =
+        Uri.parse('https://kominfo.madiunkota.go.id/api/berita/getKabarWarga');
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'username': 'nirmalacantik',
+          'password': 'emangcantikh3h3',
+        }),
+      );
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}'); // Cek isi respons API
+
+      // Memeriksa apakah status code adalah 2xx (berhasil)
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final List<dynamic> data = jsonDecode(response.body)['data'];
+
+        // Hanya mengambil 3 postingan terbaru
+        final kabarWargaPosts = data.reversed.take(3).map((item) {
+          return {
+            'title': item['judul'],
+            'description': item['content'],
+            'url': item['link'],
+            'image': item['gambar'],
+          };
+        }).toList();
+
+        setState(() {
+          _instagramPosts.addAll(kabarWargaPosts);
+        });
+
+        print(
+            'Kabar Warga data successfully loaded: ${_instagramPosts.length} posts added.');
+      } else {
+        print('Failed to load Kabar Warga data: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('Error fetching Kabar Warga posts: $error');
+    }
+  }
+
+  Widget buildInstagramCarousel(
+      Size size, List<Map<String, dynamic>> instagramPosts) {
+    return Container(
+      width: size.width,
+      padding: EdgeInsets.symmetric(horizontal: 20.0),
+      child: CarouselSlider.builder(
+        itemCount: instagramPosts.length,
+        itemBuilder: (context, index, realIndex) {
+          final post = instagramPosts[index];
+          final imageUrl = post['image'];
+          final title = post['title'];
+          final profileLink = post['url'];
+
+          return Container(
+            width: size.width,
+            child: InstagramCard(
+              imageUrl: imageUrl,
+              title: title,
+              profileLink: profileLink,
+            ),
+          );
+        },
+        options: CarouselOptions(
+          height: 300,
+          aspectRatio: 16 / 9,
+          viewportFraction: 1.0,
+          autoPlay: true,
+          autoPlayInterval: Duration(seconds: 5),
+          autoPlayAnimationDuration: Duration(milliseconds: 800),
+          autoPlayCurve: Curves.fastOutSlowIn,
+          pauseAutoPlayOnTouch: true,
+        ),
+      ),
+    );
   }
 
   @override
@@ -412,10 +439,8 @@ if (await canLaunch(url)) {
       extendBodyBehindAppBar:
           true, // Membuat latar belakang memperluas ke belakang appbar
       body: Container(
-
         width: size.width,
         height: size.height,
-
         decoration: BoxDecoration(
           image: DecorationImage(
             fit: BoxFit.cover,
@@ -590,11 +615,11 @@ if (await canLaunch(url)) {
 class InstagramCard extends StatelessWidget {
   InstagramCard({
     required this.imageUrl,
-    required this.caption,
+    required this.title,
     required this.profileLink,
   });
 
-  final String caption;
+  final String title;
   final String imageUrl;
   final String profileLink;
 
@@ -667,7 +692,7 @@ class InstagramCard extends StatelessWidget {
                     ),
                     padding: EdgeInsets.all(10.0),
                     child: Text(
-                      caption,
+                      title,
                       overflow: TextOverflow.ellipsis,
                       maxLines: 2,
                       textAlign: TextAlign.start,
@@ -819,19 +844,6 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                     ),
                   ),
                 ),
-                // Container(
-                //     // width: size.width *
-                //     //     0.8, // Ukuran lebar sesuai dengan parent (Expanded)
-                //     height: size.height *
-                //         0.05, // Atur tinggi sesuai kebutuhan atau gunakan ukuran yang cocok
-                //     child: Text(
-                //       'Now',
-                //       style: TextStyle(
-                //         fontSize: 18,
-                //         fontWeight: FontWeight.normal,
-                //         color: Color.fromARGB(255, 255, 255, 255),
-                //       ),
-                //     )),
                 Container(
                   width: size.width *
                       0.8, // Ukuran lebar sesuai dengan parent (Expanded)
@@ -886,16 +898,9 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                   ],
                 ),
                 child: _isPlaying
-                    ? Icon(
-                        Icons.stop,
-                        size: 50,
-                        color : Colors.white
-                      )
-                    : Icon(
-                        Icons.play_circle_filled,
-                        size: 50,
-                        color : Colors.white
-                      ),
+                    ? Icon(Icons.stop, size: 50, color: Colors.white)
+                    : Icon(Icons.play_circle_filled,
+                        size: 50, color: Colors.white),
               ),
             ),
           ),

@@ -2,7 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>com.kominfo.lppl-93fm-suara-madiun.ipa</key>
+	<key>com.kominfo.lppl_93fm_suara_madiun.ipa</key>
 	<array>
 		<dict>
 			<key>architectures</key>
@@ -92,7 +92,7 @@
 			<key>entitlements</key>
 			<dict>
 				<key>application-identifier</key>
-				<string>P7G5KTSXD3.com.kominfo.lppl-93fm-suara-madiun</string>
+				<string>P7G5KTSXD3.com.kominfo.lppl_93fm_suara_madiun</string>
 				<key>beta-reports-active</key>
 				<true/>
 				<key>com.apple.developer.team-identifier</key>
@@ -109,7 +109,7 @@
 				<key>dateExpires</key>
 				<string>23/04/25</string>
 				<key>name</key>
-				<string>iOS Team Store Provisioning Profile: com.kominfo.lppl-93fm-suara-madiun</string>
+				<string>iOS Team Store Provisioning Profile: com.kominfo.lppl_93fm_suara_madiun</string>
 			</dict>
 			<key>symbols</key>
 			<true/>
