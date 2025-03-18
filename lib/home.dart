@@ -311,7 +311,7 @@ class _HomePlayerState extends State<HomePlayer>
         return instagramPosts
             .map((post) => {
                   'title': post['title'],
-                  'description': post['content_text'] ?? '',
+                  'description': post['attachments'] ?? '',
                   'url': post['url'],
                   'image': post['attachments'] != null &&
                           post['attachments'].isNotEmpty
@@ -373,7 +373,7 @@ class _HomePlayerState extends State<HomePlayer>
         final List<dynamic> data = jsonDecode(response.body)['data'];
 
         // Hanya mengambil 3 postingan terbaru
-        final kabarWargaPosts = data.reversed.take(3).map((item) {
+        final kabarWargaPosts = data.take(3).toList().reversed.map((item) {
           return {
             'title': item['judul'],
             'description': item['content'],
@@ -406,7 +406,7 @@ class _HomePlayerState extends State<HomePlayer>
         itemBuilder: (context, index, realIndex) {
           final post = instagramPosts[index];
           final imageUrl = post['image'];
-          final title = post['title'];
+          final title = post['title'] ?? '';
           final profileLink = post['url'];
 
           return Container(
