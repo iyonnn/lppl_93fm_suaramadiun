@@ -1,8 +1,21 @@
-import 'package:flutter/material.dart';
-import 'package:lppl_93fm_suara_madiun/home.dart';
+import 'dart:io';
 
+import 'package:flutter/material.dart';
+import 'package:lppl_93fm_suara_madiun/UIbaru copy.dart';
+
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+  }
+}
 void main() {
-  runApp(MyApp());
+   HttpOverrides.global = MyHttpOverrides();
+  runApp(
+    MyApp(),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -10,10 +23,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: "Radio Suara Madiun",
-      home: Scaffold(
-        body: HomePlayer(),
-      ),
+
+      title: 'Suara Madiun',
+      home: HomePage2(), // Your initial screen
     );
   }
 }

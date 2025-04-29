@@ -47,6 +47,19 @@ dependencies:
   firebase_remote_config: ^4.3.8
   marquee: ^2.2.3
   audio_session: ^0.1.19
+  awesome_dialog: ^3.2.1
+  animated_splash_screen: ^1.3.0
+  page_transition: ^2.0.9
+  audioplayers: ^6.4.0
+  wave: ^0.2.2
+  curved_navigation_bar: ^1.0.6
+  flutter_audio_waveforms: ^1.0.3
+  connectivity_plus: ^2.1.0
+  flutter_inappwebview: ^5.7.2+3
+  youtube_player_flutter: ^8.1.0
+  youtube_player_iframe: ^2.3.0
+  shared_preferences: ^2.3.3
+
 
 dependency_overrides:
   fading_edge_scrollview: ^4.1.1
@@ -85,6 +98,10 @@ flutter:
     - assets/img/live.gif
     - assets/img/listen.png
     - assets/img/listen.png
+    - assets/images/banner/
+    - assets/images/imgicon/
+    - assets/images/glap.png
+
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

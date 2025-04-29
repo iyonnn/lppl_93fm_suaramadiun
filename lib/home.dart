@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
+import 'package:lppl_93fm_suara_madiun/newUI/constants/constant.dart';
 import 'package:marquee/marquee.dart';
 import 'package:siri_wave/siri_wave.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -29,6 +30,7 @@ class _HomePlayerState extends State<HomePlayer>
   int _listenersCount = 0;
 
   late AudioSession session;
+  final _homePlayer = HomePlayer();
 
   List<double> audioSamples = []; // Data sampel audio
   final List<Color> colors = [
@@ -63,7 +65,6 @@ class _HomePlayerState extends State<HomePlayer>
 
   @override
   void dispose() {
-    player.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
         overlays: SystemUiOverlay.values); // Show the system status bar
     _timer.cancel(); // Menghentikan timer
@@ -361,7 +362,7 @@ class _HomePlayerState extends State<HomePlayer>
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'username': 'nirmalacantik',
-          'password': 'emangcantikh3h3',
+          'password': password1,
         }),
       );
 
