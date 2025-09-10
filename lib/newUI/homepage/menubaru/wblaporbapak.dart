@@ -69,7 +69,7 @@ class _WebLaporBapakState extends State<WebLaporBapak> {
               child: Stack(
                 children: [
                   InAppWebView(
-                    initialUrlRequest: URLRequest(url: Uri.parse(url)),
+                    initialUrlRequest: URLRequest(url: WebUri(url)),
                     initialOptions: InAppWebViewGroupOptions(
                       crossPlatform: InAppWebViewOptions(
                         clearCache: false,
@@ -145,7 +145,7 @@ class _WebLaporBapakState extends State<WebLaporBapak> {
               ),
             ),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.center,     
+              crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 Tooltip(

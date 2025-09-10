@@ -71,7 +71,7 @@ class _WebKontributorState extends State<WebKontributor> {
               child: Stack(
                 children: [
                   InAppWebView(
-                    initialUrlRequest: URLRequest(url: Uri.parse(url)),
+                    initialUrlRequest: URLRequest(url: WebUri(url)),
                     initialOptions: InAppWebViewGroupOptions(
                       crossPlatform: InAppWebViewOptions(
                         clearCache: false,

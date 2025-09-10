@@ -9,7 +9,7 @@ class PlaylistVideoListPage extends StatefulWidget {
   final String playlistId;
   final String playlistTitle;
   final String youtubeApiKey;
-  final VoidCallback? onBack; // Tambahan
+  final VoidCallback? onBack;
 
   const PlaylistVideoListPage({
     super.key,
@@ -32,15 +32,6 @@ class _PlaylistVideoListPageState extends State<PlaylistVideoListPage> {
   @override
   void initState() {
     super.initState();
-
-    _youtubePlayerController = YoutubePlayerController(
-      initialVideoId: '',
-      params: YoutubePlayerParams(
-        showControls: true,
-        showFullscreenButton: true,
-      ),
-    );
-
     fetchPlaylistVideos();
   }
 
@@ -62,13 +53,14 @@ class _PlaylistVideoListPageState extends State<PlaylistVideoListPage> {
           final data = jsonDecode(response.body);
           if (data['items'] != null) {
             allVideos.addAll(
-                List<Map<String, dynamic>>.from(data['items'].map((item) {
-              return {
-                'title': item['snippet']['title'],
-                'thumbnail': item['snippet']['thumbnails']['medium']['url'],
-                'videoId': item['snippet']['resourceId']['videoId'],
-              };
-            })));
+              List<Map<String, dynamic>>.from(data['items'].map((item) {
+                return {
+                  'title': item['snippet']['title'],
+                  'thumbnail': item['snippet']['thumbnails']['medium']['url'],
+                  'videoId': item['snippet']['resourceId']['videoId'],
+                };
+              })),
+            );
           }
           nextPageToken = data['nextPageToken'];
         } else {
@@ -79,6 +71,18 @@ class _PlaylistVideoListPageState extends State<PlaylistVideoListPage> {
       setState(() {
         videos = allVideos;
         isLoading = false;
+
+        if (videos.isNotEmpty) {
+          _selectedVideoId = videos.first['videoId'];
+          _youtubePlayerController = YoutubePlayerController.fromVideoId(
+            videoId: _selectedVideoId!,
+            autoPlay: true,
+            params: const YoutubePlayerParams(
+              showControls: true,
+              showFullscreenButton: true,
+            ),
+          );
+        }
       });
     } catch (e) {
       print('Error: $e');
@@ -99,11 +103,11 @@ class _PlaylistVideoListPageState extends State<PlaylistVideoListPage> {
     return SafeArea(
       child: Column(
         children: [
-          // Bagian header dengan background transparan atau blur
+          // Header
           Container(
             width: double.infinity,
             padding: EdgeInsets.symmetric(
-              horizontal: paddingHorizontal * 1,
+              horizontal: paddingHorizontal,
               vertical: 10,
             ),
             decoration: BoxDecoration(
@@ -119,12 +123,9 @@ class _PlaylistVideoListPageState extends State<PlaylistVideoListPage> {
             ),
             child: Row(
               children: [
-                // Tombol back mepet kiri
                 GestureDetector(
                   onTap: widget.onBack,
                   child: Container(
-                    margin: const EdgeInsets.only(
-                        left: 0), // pastikan tidak ada margin kiri
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
@@ -143,21 +144,24 @@ class _PlaylistVideoListPageState extends State<PlaylistVideoListPage> {
                       fontWeight: FontWeight.w600,
                     ),
                     overflow: TextOverflow.ellipsis,
-                  ), /////////.
+                  ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 10),
-          // Hanya tampil jika ada video dipilih
+
+          // Player
           if (_selectedVideoId != null && _youtubePlayerController != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 12.0),
-              child: YoutubePlayerIFrame(
+              child: YoutubePlayerScaffold(
                 controller: _youtubePlayerController!,
+                builder: (context, player) => player,
               ),
             ),
 
+          // List Video
           Expanded(
             child: isLoading
                 ? const Center(
@@ -175,7 +179,9 @@ class _PlaylistVideoListPageState extends State<PlaylistVideoListPage> {
                           onTap: () {
                             setState(() {
                               _selectedVideoId = video['videoId'];
-                              _youtubePlayerController?.load(_selectedVideoId!);
+                              _youtubePlayerController?.loadVideoById(
+                                videoId: _selectedVideoId!,
+                              );
                             });
                           },
                           child: Container(

@@ -1,5 +1,5 @@
 {
-    "dart.flutterSdkPath": "C:/flutter/bin/dart",
-    "cmake.sourceDirectory": "C:/projectcoba/lppl_93fm_suara_madiun/build/windows/_deps/nuget-subbuild",
+    "dart.flutterSdkPath": "/usr/local/Caskroom/flutter/3.32.8/flutter",
+    "cmake.sourceDirectory": "/Users/mac-iyon-tik/DRIVE IYON/PROJECT FLUTTER/lppl_93fm_suaramadiun/build/macos/_deps/nuget-subbuild",
     "cmake.ignoreCMakeListsMissing": true
 }
